@@ -1,3 +1,5 @@
+package fr.pantheonsorbonne.miage.enums;
+
 /*
  * List the possible colors of a card
  */
