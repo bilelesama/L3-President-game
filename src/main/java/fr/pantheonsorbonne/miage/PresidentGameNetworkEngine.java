@@ -2,6 +2,7 @@ package fr.pantheonsorbonne.miage;
 
 import java.util.*;
 
+import fr.pantheonsorbonne.miage.exceptions.NoMoreCardsException;
 import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
 import fr.pantheonsorbonne.miage.model.Game;
@@ -174,5 +175,28 @@ public class PresidentGameNetworkEngine {
     private void gameOver() {
         System.out.println("End of the game");
         System.out.println("Winner is ?");
+    }
+      /**
+     * we get a card from a player, if possible.
+     * <p>
+     * If the player has no more card, throw an exception
+     *
+     * @param player the name of the player
+     * @return a card from a player
+     * @throws NoMoreCardException if player has no more card.
+     */
+    @Override
+    protected Card getCardFromPlayer(String player) throws NoMoreCardsException {
+        hostFacade.sendGameCommandToPlayer(president, player, new GameCommand("playACard"));
+        GameCommand expectedCard = hostFacade.receiveGameCommand(president);
+        if (expectedCard.name().equals("card")) {
+            return Card.valueOf(expectedCard.body());
+        }
+        if (expectedCard.name().equals("outOfCard")) {
+            throw new NoMoreCardsException();
+        }
+        //should not happen!
+        throw new RuntimeException("invalid state");
+
     }
 }

@@ -2,7 +2,6 @@ package fr.pantheonsorbonne.miage;
 
 import java.util.Arrays;
 import java.util.HashSet;
-
 import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
 import fr.pantheonsorbonne.miage.model.Game;
@@ -15,7 +14,6 @@ public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
     }
 
     public static void main(String[] args) {
-        
         // create Game with players
         HashSet<String> players = new HashSet<>();
         players.addAll(Arrays.asList("Kenz", "Aurelie", "Bilel", "Adrien"));
