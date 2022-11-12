@@ -185,7 +185,6 @@ public class PresidentGameNetworkEngine {
      * @return a card from a player
      * @throws NoMoreCardException if player has no more card.
      */
-    @Override
     protected Card getCardFromPlayer(String player) throws NoMoreCardsException {
         hostFacade.sendGameCommandToPlayer(president, player, new GameCommand("playACard"));
         GameCommand expectedCard = hostFacade.receiveGameCommand(president);
