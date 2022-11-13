@@ -16,14 +16,13 @@ public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
     public static void main(String[] args) {
         // create Game with players
         HashSet<String> players = new HashSet<>();
-        players.addAll(Arrays.asList("Kenz", "Aurelie", "Bilel", "Adrien"));
-        Game president = new Game("president1", "president", "groupe E", players, Game.GameState.CREATED);
+        players.addAll(Arrays.asList("Kenz", "Aurelie", "Bilele", "Adrien"));
+        Game president = new Game("president-jeu1", "president", "groupe E", players, Game.GameState.CREATED);
         
         // create local engine
         PresidentGameLocalEngine host = new PresidentGameLocalEngine(null, president);
         // play
         host.play();
-        System.out.println("Who has the queen of heart ?");
         
     }
 
@@ -33,7 +32,7 @@ public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
         for (String playerName : president.getPlayers()) {
             Card[] cardsToGive = deck.giveCards(nbCards);
             String cardsString = Card.cardsToString(cardsToGive);
-            if (cardsString.contains("H Q")){
+            if (cardsString.contains("Q H")){
                 setFirstPlayer(playerName);
             }
             System.out.println("Send "+cardsString+" to "+playerName);
@@ -44,6 +43,12 @@ public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
     @Override
     protected void handleResponseToQueenOfHeart(){
         System.out.println(getFirstPlayer()+ " starts the game");
-        //reorder the list
+        getPlayers().add(getFirstPlayer());
+        for (String player:president.getPlayers()){
+            if (!player.equals(getFirstPlayer())){
+                getPlayers().add(player);
+            }
+        }
+        System.out.println(getPlayers());
     }
 }

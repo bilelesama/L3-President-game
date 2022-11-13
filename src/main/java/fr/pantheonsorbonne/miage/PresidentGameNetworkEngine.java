@@ -2,9 +2,9 @@ package fr.pantheonsorbonne.miage;
 
 import java.util.*;
 
-import fr.pantheonsorbonne.miage.exceptions.NoMoreCardsException;
 import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
+import fr.pantheonsorbonne.miage.game.PlayerResponse;
 import fr.pantheonsorbonne.miage.model.Game;
 import fr.pantheonsorbonne.miage.model.GameCommand;
 
@@ -17,14 +17,14 @@ public class PresidentGameNetworkEngine {
     private static int nbPlayers;
 
     private final HostFacade hostFacade;
-    private final Game president;
+    protected final Game president;
     private String firstPlayer;
 
     /*
      * storing the players name in a list
      * wil be use when roles will be displayed
      */
-    private final List<String> players;
+    private final List<String> players = new ArrayList<>();
     /*
      * winners needs to be a LinkedHashSet so we can keep the seizure order
      * this will help when roles will be displayed
@@ -36,7 +36,6 @@ public class PresidentGameNetworkEngine {
 
     public PresidentGameNetworkEngine(HostFacade hostFacade, Game president) {
         this.hostFacade = hostFacade;
-        this.players = new ArrayList<>(president.getPlayers());
         this.president = president;
     }
 
@@ -87,14 +86,21 @@ public class PresidentGameNetworkEngine {
         Deck deck = new Deck();
         giveCardsToPlayers(president, deck);
         // check who has the Queen of heart (wait all responses) -> reorder players list
+        System.out.println("Who has the queen of heart ?");
         handleResponseToQueenOfHeart();
-        // start loop : ask for every players to play
+        // start loop : ask for every players to play, show the cards played before the player's turn, check if the card can be played
+        while (playersStillPlaying.size() >= 1){
+            for (String player : getPlayers()){
+                getCardFromPlayer(player);
+            }
+        }
         // end of the loop
         // display roles
         // giveCards
+        giveCardsToPlayers(president, deck);
         // exchangeCards
         // start the same loop as before
-        // gameOver
+        // end of the game :
         gameOver();
 
     }
@@ -107,7 +113,7 @@ public class PresidentGameNetworkEngine {
         return this.president.getPlayers();
     }
 
-    /* give cards to each player */
+    /** give cards to each player */
     protected void giveCardsToPlayers(Game president, Deck deck) {
         int nbCards = deck.getDeckSize() / president.getPlayers().size();
         for (String playerName : president.getPlayers()) {
@@ -117,20 +123,27 @@ public class PresidentGameNetworkEngine {
         }
     }
 
-    /* check who has the queen of heart */
-    //TO DO for each player 
+    /** check who has the queen of heart */
     protected void handleResponseToQueenOfHeart(){
-        GameCommand command = hostFacade.receiveGameCommand(president);
-        if ("responseToQueenOfHeart".equals(command.name())){
-            String[] bodyContent = command.body().split(":");
-            if ("yes".equals(bodyContent[1])){
-                System.out.println(bodyContent[0]+" starts the game");
+        List<String> otherPlayers = new ArrayList<>();
+        for (int i=0; i<nbPlayers; i++){
+            GameCommand command = hostFacade.receiveGameCommand(president);
+            if ("responseToQueenOfHeart".equals(command.name())){
+                String[] bodyContent = command.body().split(":");
+                if ("yes".equals(bodyContent[1])){
+                    setFirstPlayer(bodyContent[0]);
+                    players.add(bodyContent[0]);
+                }
+                else {
+                    otherPlayers.add(bodyContent[0]);
+                }
             }
         }
-        //reorder the list
+        players.addAll(otherPlayers);
     }
 
-    /* storing the name of the first player */
+
+    /** storing the name of the first player */
     protected void setFirstPlayer(String playerName) {
         this.firstPlayer = playerName;
         System.out.println("The first player is " + firstPlayer);
@@ -140,20 +153,18 @@ public class PresidentGameNetworkEngine {
         return firstPlayer;
     }
 
-    /* the host designates who's the next player and sends him the cards played */
+    /** the host designates who's the next player and sends him the cards played */
     protected void plays(Card[] cards) {
         System.out.println("it's your turn ! Here the cards played before :" + Arrays.toString(cards));
     }
 
-    /* winners will be used while displaying the roles */
+    /** winners will be used while displaying the roles */
     protected void addWinners(String playerName) {
         winners.add(playerName);
     }
 
-    /*
-     * telling which players still in the game -> will help saying that the sleeve
-     * is over when there's one player left
-     */
+    /** telling which players still in the game -> will help saying that the sleeve
+     * is over when there's one player left */
     private void playersInTheGame(Set<String> playersStillPlaying) {
         System.out.println("players still playing " + playersStillPlaying.toString());
     }
@@ -178,24 +189,27 @@ public class PresidentGameNetworkEngine {
     }
       /**
      * we get a card from a player, if possible.
-     * <p>
-     * If the player has no more card, throw an exception
-     *
      * @param player the name of the player
-     * @return a card from a player
-     * @throws NoMoreCardException if player has no more card.
+     * @return card(s) from a player, and the number of remaining cards
      */
-    protected Card getCardFromPlayer(String player) throws NoMoreCardsException {
-        hostFacade.sendGameCommandToPlayer(president, player, new GameCommand("playACard"));
-        GameCommand expectedCard = hostFacade.receiveGameCommand(president);
-        if (expectedCard.name().equals("card")) {
-            return Card.valueOf(expectedCard.body());
+    protected PlayerResponse getCardFromPlayer(String player){
+        hostFacade.sendGameCommandToPlayer(president, player, new GameCommand("play"));
+        GameCommand receivedCard = hostFacade.receiveGameCommand(president);
+        if (receivedCard.name().equals("played")) {
+            Card[] cards = Card.stringToCards(receivedCard.body());
+            int nbRemainingCards = Integer.parseInt(receivedCard.params().get("nbcards"));
+            return new PlayerResponse(cards, nbRemainingCards);
         }
-        if (expectedCard.name().equals("outOfCard")) {
-            throw new NoMoreCardsException();
+        if (receivedCard.name().equals("canNotPlay")) {
+            int nbRemainingCards = Integer.parseInt(receivedCard.params().get("nbcards"));
+            return new PlayerResponse(new Card[0], nbRemainingCards); 
         }
         //should not happen!
         throw new RuntimeException("invalid state");
 
+    }
+
+    public List<String> getPlayers() {
+        return this.players;
     }
 }
