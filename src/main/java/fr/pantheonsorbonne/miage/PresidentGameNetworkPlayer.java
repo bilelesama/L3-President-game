@@ -72,10 +72,10 @@ public class PresidentGameNetworkPlayer {
         int nbOfCardsRemaining = hand.size() - playedCards.length;
         // remove played cards from hand
         if (playedCards.length == 0) {
-            playerFacade.sendGameCommandToAll(president, new GameCommand("canNotPlay:?playerid="+playerId+"&nbcards="+nbOfCardsRemaining));
+            playerFacade.sendGameCommandToAll(president, new GameCommand("canNotPlay:?idPlayer="+playerId+"&nbcards="+nbOfCardsRemaining));
         } else {
             String stringPlayedCards = Card.cardsToString(playedCards);
-            playerFacade.sendGameCommandToAll(president, new GameCommand("played:"+stringPlayedCards+"?playerid="+playerId+"&nbcards="+nbOfCardsRemaining));
+            playerFacade.sendGameCommandToAll(president, new GameCommand("played:"+stringPlayedCards+"?idPlayer="+playerId+"&nbcards="+nbOfCardsRemaining));
         }
     }
     

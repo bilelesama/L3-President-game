@@ -2,6 +2,7 @@ package fr.pantheonsorbonne.miage;
 
 import java.util.*;
 
+import fr.pantheonsorbonne.miage.enums.CardValue;
 import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
 import fr.pantheonsorbonne.miage.game.PlayerResponse;
@@ -19,6 +20,9 @@ public class PresidentGameNetworkEngine {
     private final HostFacade hostFacade;
     protected final Game president;
     private String firstPlayer;
+
+    private Deque<Card[]> lastNMoves = new ArrayDeque<>();
+    private Map<CardValue, Integer> squareCounter = new HashMap<>();
 
     /*
      * storing the players name in a list
@@ -40,10 +44,6 @@ public class PresidentGameNetworkEngine {
     }
 
     public static boolean isInitPlayers(String[] args) {
-        if (args == null) {
-            nbPlayers = PLAYER_COUNT;
-            return true;
-        }
         if (args.length >= 1) {
             try {
                 nbPlayers = Integer.parseInt(args[0]);
@@ -57,8 +57,10 @@ public class PresidentGameNetworkEngine {
                 System.err.println("Invalid number of players");
                 return false;
             }
+        } else {
+            nbPlayers = PLAYER_COUNT;
+            return true;
         }
-        return false;
     }
 
     public static void main(String[] args) {
@@ -89,9 +91,16 @@ public class PresidentGameNetworkEngine {
         System.out.println("Who has the queen of heart ?");
         handleResponseToQueenOfHeart();
         // start loop : ask for every players to play, show the cards played before the player's turn, check if the card can be played
-        while (playersStillPlaying.size() >= 1){
+        while (playersStillPlaying.size() > 1){
             for (String player : getPlayers()){
-                getCardFromPlayer(player);
+                PlayerResponse response = getCardFromPlayer(player);
+                //update last n moves
+                updateLastNMoves(response);
+                if (response.getNbOfCardsRemaining() == 0){
+            
+                }
+                //test if last card --> 
+                //test if serie is closed --> reset the pile
             }
         }
         // end of the loop
@@ -104,6 +113,8 @@ public class PresidentGameNetworkEngine {
         gameOver();
 
     }
+
+
 
     /*
      * parent method should be implement in PresidentGameEngine (check teacher's
@@ -142,6 +153,12 @@ public class PresidentGameNetworkEngine {
         players.addAll(otherPlayers);
     }
 
+    private void updateLastNMoves(PlayerResponse response){
+        lastNMoves.addFirst(response.getCards());
+        if (lastNMoves.size() > nbPlayers){
+            lastNMoves.removeLast();
+        }
+    }   
 
     /** storing the name of the first player */
     protected void setFirstPlayer(String playerName) {
@@ -207,6 +224,41 @@ public class PresidentGameNetworkEngine {
         //should not happen!
         throw new RuntimeException("invalid state");
 
+    }
+
+    /**
+     * @return if the serie is closed or not
+     */
+    protected boolean isClosed(){
+        return endsWithTwo() || isSquare() || noOneCanPlay();
+    }
+
+    protected boolean endsWithTwo(){
+         return lastNMoves.getFirst().length > 0 && CardValue.TWO.equals(lastNMoves.getFirst()[0].getValue());
+    }
+
+    protected boolean isSquare(){
+        if (lastNMoves.getFirst().length > 0){
+            CardValue cardValue = lastNMoves.getFirst()[0].getValue();
+            Integer cpt = squareCounter.merge(cardValue, lastNMoves.getFirst().length, Integer::sum);
+            return cpt == 4;
+        }
+        return false;
+    }
+
+    protected boolean isPresident(){
+        return false;
+    }
+
+    
+
+    protected boolean noOneCanPlay(){
+        for (Card[] move : lastNMoves){
+            if (move.length != 0){
+                return false; 
+            }
+        }
+        return true;
     }
 
     public List<String> getPlayers() {
