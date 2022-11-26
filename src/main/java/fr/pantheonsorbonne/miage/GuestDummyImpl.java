@@ -16,13 +16,13 @@ public class GuestDummyImpl implements Guest {
     @Override
     public Card[] chooseBestCardsToGive(List<Card> hand, int nbCards) {
         // TODO Auto-generated method stub
-        return null;
+        return new Card[0];
     }
 
     @Override
     public Card[] chooseCardsOfYourChoiceToGive(List<Card> hand, int nbCards) {
         // TODO Auto-generated method stub
-        return null;
+        return new Card[0];
     }
     
 }
