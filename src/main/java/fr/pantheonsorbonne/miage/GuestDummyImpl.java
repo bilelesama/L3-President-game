@@ -12,5 +12,17 @@ public class GuestDummyImpl implements Guest {
         cardsToPlay[0] = hand.get(0); 
         return cardsToPlay;
     }
+
+    @Override
+    public Card[] chooseBestCardsToGive(List<Card> hand, int nbCards) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Card[] chooseCardsOfYourChoiceToGive(List<Card> hand, int nbCards) {
+        // TODO Auto-generated method stub
+        return null;
+    }
     
 }
