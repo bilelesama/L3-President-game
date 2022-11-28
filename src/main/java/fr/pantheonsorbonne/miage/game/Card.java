@@ -59,6 +59,6 @@ public class Card {
     /* this method is overrided from toString of the object class */
     @Override
     public String toString() {
-        return this.value.getStringRepresentation() + " " + this.color.getStringRepresentation();
+        return this.value.getStringRepresentation() + this.color.getStringRepresentation();
     }
 }

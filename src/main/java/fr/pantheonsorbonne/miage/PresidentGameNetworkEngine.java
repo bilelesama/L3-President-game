@@ -80,7 +80,7 @@ public class PresidentGameNetworkEngine {
             return false;
         }
     }
-    
+        
     public static void main(String[] args) {
         if (!checkArgs(args)) {
             System.err.println("Usage : PresidentGameNetworkEngine [nbPlayers] [nbRounds]");
@@ -90,11 +90,14 @@ public class PresidentGameNetworkEngine {
         HostFacade hostFacade = Facade.getFacade();
         hostFacade.waitReady();
 
+        // set the name of the host
+        hostFacade.createNewPlayer("Host");
+
         // create a new game of president
         Game president = hostFacade.createNewGame("PRESIDENT");
 
         // wait for enough players to join
-        hostFacade.waitForExtraPlayerCount(nbPlayers);
+        hostFacade.waitForExtraPlayerCount(nbPlayers+1);
 
         PresidentGameNetworkEngine host = new PresidentGameNetworkEngine(hostFacade, president);
         host.play();
@@ -134,6 +137,7 @@ public class PresidentGameNetworkEngine {
         for (String playerId : president.getPlayers()) {
             Card[] cardsToGive = deck.giveCards(nbCards);
             String cardsString = Card.cardsToString(cardsToGive);
+            System.out.println(cardsString);
             hostFacade.sendGameCommandToPlayer(president, playerId, new GameCommand("cardsForYou", cardsString));
         }
     }
@@ -165,6 +169,7 @@ public class PresidentGameNetworkEngine {
 
     private void gameLoop(){
         boolean endsWithTwo = false;
+        playersStillPlaying.addAll(players);
         while (playersStillPlaying.size() > 1){
             for (String player : getPlayers()){
                 PlayerResponse response = getCardFromPlayer(player);
@@ -192,6 +197,8 @@ public class PresidentGameNetworkEngine {
                 }  
             }
         }
+        // end of while loop, playersStillPlaying should contain only one player (the last one)
+        winners.add(playersStillPlaying.iterator().next());
         if (!endsWithTwo){
             String scumbag = winners.pollLast();
             winners.addFirst(scumbag);
@@ -252,6 +259,10 @@ public class PresidentGameNetworkEngine {
                 nbResponses++;
             }
         }
+
+        players.clear();
+        players.addAll(winners);
+        winners.clear();
     }
 
     private void gameOver() {

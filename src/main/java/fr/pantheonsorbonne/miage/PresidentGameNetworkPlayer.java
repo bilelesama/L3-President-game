@@ -88,6 +88,7 @@ public class PresidentGameNetworkPlayer {
     }
 
     private static void handleCardsForYou(GameCommand command) {
+        System.out.println(command.body());
         Card[] receiveCards = Card.stringToCards(command.body());
         List<Card> receiveCardsList = Arrays.asList(receiveCards);
         hand.clear();
