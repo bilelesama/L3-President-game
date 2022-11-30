@@ -18,7 +18,11 @@ public class PresidentGameNetworkEngine {
 
     private final HostFacade hostFacade;
     protected final Game president;
+    private Deck deck = null;
     private String firstPlayer;
+    private boolean endsWithTwo = false; 
+    private boolean isPresident = false;
+    private String closedPlayer = "";
 
     private Deque<Card[]> lastNMoves = new ArrayDeque<>();
     private Map<CardValue, Integer> squareCounter = new HashMap<>();
@@ -104,7 +108,7 @@ public class PresidentGameNetworkEngine {
     }
 
     protected void play() {
-        Deck deck = new Deck();
+        deck = new Deck();
         giveCardsToPlayers(president, deck);
         // check who has the Queen of heart (wait all responses) -> reorder players list
         System.out.println("Who has the queen of heart ?");
@@ -114,6 +118,7 @@ public class PresidentGameNetworkEngine {
 
         int cpt = 0;
         while (cpt < nbRounds -1){
+            deck = new Deck();
             giveCardsToPlayers(president, deck);
             exchangeCards();
             gameLoop();
@@ -168,41 +173,72 @@ public class PresidentGameNetworkEngine {
     }
 
     private void gameLoop(){
-        boolean endsWithTwo = false;
         playersStillPlaying.addAll(players);
         while (playersStillPlaying.size() > 1){
             for (String player : getPlayers()){
-                PlayerResponse response = getCardFromPlayer(player);
-                updateLastNMoves(response);
-                //check if the player ends his hand
-                if (response.getNbOfCardsRemaining() == 0){
-                    //if the last card is a 2, the player is the Scumbag
-                    if (endsWithTwo()){
-                        winners.addFirst(player); 
-                        endsWithTwo = true;
-                    }
-                    else {
-                        addWinners(player);
-                    }
-                    playersStillPlaying.remove(player);
-
-                    //if he is the first player to finish : reset the pile 
-                    if (winners.size() == 1){
-                        lastNMoves.clear();
-                    }
+                if(skipPlayerWhenClose(player)) {
+                    continue;
                 }
-                //check if the serie is finished
-                if (isClosed()){
-                    lastNMoves.clear();
-                }  
+                if (playersStillPlaying.contains(player)){
+                    playerPlay(player);
+                }
             }
         }
-        // end of while loop, playersStillPlaying should contain only one player (the last one)
-        winners.add(playersStillPlaying.iterator().next());
+        // end of while loop, playersStillPlaying should contains only one player (the last one)
+        System.out.printf("playersStillPlaying.size() %d - [%s]%n", playersStillPlaying.size(), playersStillPlaying);
+        winners.addAll(playersStillPlaying);
         if (!endsWithTwo){
             String scumbag = winners.pollLast();
             winners.addFirst(scumbag);
         }   
+        System.out.println("order for new round : "+winners);
+    }
+
+    private boolean skipPlayerWhenClose(String player) {
+        if (closedPlayer.isEmpty()){
+            return false;
+        } 
+        else if(!player.equals(closedPlayer)){
+            return true;
+        }
+        else{
+            closedPlayer = "";
+            return false;
+        }
+    }
+
+    private void playerPlay(String player) {
+        PlayerResponse response = getCardFromPlayer(player);
+        updateLastNMoves(response);
+        System.out.println("lastNmoves : ");
+        lastNMoves.forEach(System.out::println);
+        //check if the player ends his hand
+        if (response.getNbOfCardsRemaining() == 0){
+            //if the last card is a 2, the player is the Scumbag
+            if (endsWithTwo()){
+                System.out.println(player+" ends with two");
+                winners.addFirst(player); 
+                endsWithTwo = true;
+            }
+            else {
+                System.out.println(player+" ends");
+                addWinners(player);
+            }
+            playersStillPlaying.remove(player);
+
+            //if he is the first player to finish : reset the pile 
+            if (winners.size() == 1){
+                isPresident = true;
+            }
+            System.out.println("winners.size : "+winners.size() + " playersStillPlaying.size(): " + playersStillPlaying.size());
+        }
+        //check if the serie is finished
+        if (isClosed(isPresident)){
+            System.out.println("round is closed");
+            lastNMoves.clear();
+            isPresident = false;
+            closedPlayer = player;
+        }  
     }
 
     private void updateLastNMoves(PlayerResponse response){
@@ -275,8 +311,10 @@ public class PresidentGameNetworkEngine {
      * @return card(s) from a player, and the number of remaining cards
      */
     protected PlayerResponse getCardFromPlayer(String player){
-        hostFacade.sendGameCommandToPlayer(president, player, new GameCommand("play"));
+        hostFacade.sendGameCommandToPlayer(president, player, new GameCommand("play", getLastNMovesStr()));
+        System.out.println("Ask "+player);
         GameCommand receivedCard = hostFacade.receiveGameCommand(president);
+        System.out.println("receive card : "+receivedCard.body()+" params : "+receivedCard.params());
         if (receivedCard.name().equals("played")) {
             Card[] cards = Card.stringToCards(receivedCard.body());
             int nbRemainingCards = Integer.parseInt(receivedCard.params().get("nbcards"));
@@ -291,15 +329,24 @@ public class PresidentGameNetworkEngine {
 
     }
 
-    /**
-     * @return if the serie is closed or not
-     */
-    protected boolean isClosed(){
-        return endsWithTwo() || isSquare() || noOneCanPlay();
+    private String getLastNMovesStr() {
+        StringJoiner lastMove = new StringJoiner("#");
+        for(Card[] move : lastNMoves){
+            lastMove.add(Card.cardsToString(move));
+        }
+        return lastMove.toString();
+    }
+
+    protected boolean isClosed(boolean isPresident){
+        System.out.printf("endsWithTwo: %b - isSquare: %b - noOneCanPlay: %b - isPresident: %b%n", endsWithTwo(), isSquare(), noOneCanPlay(), isPresident);
+        return endsWithTwo() || isSquare() || noOneCanPlay() || isPresident ;
     }
 
     protected boolean endsWithTwo(){
-         return lastNMoves.getFirst().length > 0 && CardValue.TWO.equals(lastNMoves.getFirst()[0].getValue());
+        if (lastNMoves.getFirst().length > 0){
+            return CardValue.TWO.equals(lastNMoves.getFirst()[0].getValue());
+        }
+        return false;
     }
 
     protected boolean isSquare(){
@@ -312,10 +359,14 @@ public class PresidentGameNetworkEngine {
     }
 
      protected boolean noOneCanPlay(){
+        int nb = 0;
         for (Card[] move : lastNMoves){
-            if (move.length != 0){
-                return false; 
+            if (nb<playersStillPlaying.size()){
+                if (move.length != 0){
+                    return false; 
+                }
             }
+            nb++;
         }
         return true;
     }

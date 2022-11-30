@@ -26,6 +26,7 @@ public class PresidentGameNetworkPlayer {
     static Game president;
     static List<Card[]> lastNMoves = new ArrayList<>();
     static Guest guest;
+    static boolean playing = true;
 
     public static void main(String[] args) {
         /* check if the player name is ok */
@@ -46,32 +47,35 @@ public class PresidentGameNetworkPlayer {
             System.exit(0);
         }
        
-        while (true) {
+        while (playing) {
             GameCommand command = playerFacade.receiveGameCommand(president);
-            switch (command.name()) {
-                case "cardsForYou":
-                    handleCardsForYou(command);
-                    break;
-                case "askForQueenOfHeart" :
-                    handleAskForQueenOfHeart();
-                    break;
-                case "play":
-                    handlePlay(command);
-                    break;
-                case "giveBestCards":
-                    handleGiveBestCards(command);
-                    break;
-                case "giveAndReceive" :
-                    handleGiveCardsOfYourChoice(command);
-                    break;
-                case "giveCardsForExchange" :
-                    handleCardsReceivedForExchange(command);
-                    break;
-                case "gameOver":
-                    handleGameOverCommand(command);
-                    break;
-                default :
-                    break;
+            if(command != null) {
+                System.out.println("command name : "+ command.name()+" command body : "+command.body());
+                switch (command.name()) {
+                    case "cardsForYou":
+                        handleCardsForYou(command);
+                        break;
+                    case "askForQueenOfHeart" :
+                        handleAskForQueenOfHeart();
+                        break;
+                    case "play":
+                        handlePlay(command);
+                        break;
+                    case "giveBestCards":
+                        handleGiveBestCards(command);
+                        break;
+                    case "giveAndReceive" :
+                        handleGiveCardsOfYourChoice(command);
+                        break;
+                    case "giveCardsForExchange" :
+                        handleCardsReceivedForExchange(command);
+                        break;
+                    case "gameOver":
+                        handleGameOverCommand(command);
+                        break;
+                    default :
+                        break;
+                }
             }
         }
     }
@@ -98,10 +102,16 @@ public class PresidentGameNetworkPlayer {
 
     private static void handlePlay(GameCommand command) {
         // set the list of the n last moves extract from the command.body()
+        updateLastNMoves(command.body());
         Card[] playedCards = guest.chooseCardsToPlay(hand,lastNMoves);
+        System.out.println("playedCards : ");
+        for ( Card card : playedCards){
+            System.out.println(card);
+        }
         // check playedCards.length <= hand.size() and playedCards exist in hand
         int nbOfCardsRemaining = hand.size() - playedCards.length;
-        // remove played cards from hand
+        System.out.println("nb cards remaining : "+nbOfCardsRemaining);
+        removeCardsFromHand(playedCards);
         if (playedCards.length == 0) {
             playerFacade.sendGameCommandToAll(president, new GameCommand("canNotPlay", "", Map.of("idPlayer",playerId,"nbcards",String.valueOf(nbOfCardsRemaining))));
         } else {
@@ -110,13 +120,21 @@ public class PresidentGameNetworkPlayer {
         }
     }
 
+    private static void updateLastNMoves(String body) {
+        List<Card[]> newLastMoves = new ArrayList<>();
+        for (String move : body.split("#")){
+            newLastMoves.add(Card.stringToCards(move));
+        }
+        lastNMoves = newLastMoves;
+    }
+
     private static void removeCardsFromHand(Card[] cards){
         for (Card card : cards){
             hand.remove(card);
         }
     }
 
-    private static void handleGiveBestCards(GameCommand command) {
+    protected static void handleGiveBestCards(GameCommand command) {
         int nbCards = Integer.parseInt(command.body());
         Card[] cards = guest.chooseBestCardsToGive(new ArrayList<>(hand), nbCards);
         removeCardsFromHand(cards);
@@ -125,7 +143,7 @@ public class PresidentGameNetworkPlayer {
         playerFacade.sendGameCommandToPlayer(president, playerToGive, giveBestCards);
     }
 
-    private static void handleGiveCardsOfYourChoice(GameCommand command) {
+    protected static void handleGiveCardsOfYourChoice(GameCommand command) {
         Card[] cardsReceived = Card.stringToCards(command.body());
         Card[] cards = guest.chooseCardsOfYourChoiceToGive(new ArrayList<>(hand), cardsReceived.length);
         removeCardsFromHand(cards);
@@ -147,5 +165,7 @@ public class PresidentGameNetworkPlayer {
 
 
     private static void handleGameOverCommand(GameCommand command) {
+        System.out.println("End of game, winner is xxx");
+        playing = false;
     }
 }
