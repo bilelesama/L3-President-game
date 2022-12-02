@@ -6,10 +6,10 @@ import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
 import fr.pantheonsorbonne.miage.model.Game;
 
-public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
+public class PresidentGameLocalEngine extends PresidentGameEngine {
 
     public PresidentGameLocalEngine(HostFacade hostFacade, Game president) {
-        super(hostFacade, president);
+        super();
         //TODO Auto-generated constructor stub
     }
 
@@ -27,7 +27,7 @@ public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
     }
 
     @Override
-    protected void giveCardsToPlayers(Game president, Deck deck) {
+    public void giveCardsToPlayers(Game president, Deck deck) {
         int nbCards = deck.getDeckSize()/president.getPlayers().size();
         for (String playerName : president.getPlayers()) {
             Card[] cardsToGive = deck.giveCards(nbCards);
@@ -41,7 +41,7 @@ public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
     }
 
     @Override
-    protected void handleResponseToQueenOfHeart(){
+    public void handleResponseToQueenOfHeart(){
         System.out.println(getFirstPlayer()+ " starts the game");
         getPlayers().add(getFirstPlayer());
         for (String player:president.getPlayers()){
@@ -50,6 +50,30 @@ public class PresidentGameLocalEngine extends PresidentGameNetworkEngine {
             }
         }
         System.out.println(getPlayers());
+    }
+
+    @Override
+    public void askForQueenOfHeart() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void gameLoop() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void exchangeCards() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void gameOver() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

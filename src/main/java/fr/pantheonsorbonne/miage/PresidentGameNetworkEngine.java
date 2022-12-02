@@ -2,6 +2,8 @@ package fr.pantheonsorbonne.miage;
 
 import java.util.*;
 
+import com.google.errorprone.annotations.OverridingMethodsMustInvokeSuper;
+
 import fr.pantheonsorbonne.miage.enums.CardValue;
 import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
@@ -12,7 +14,7 @@ import fr.pantheonsorbonne.miage.model.GameCommand;
 /**
  * This class implements the war game with the network engine
  */
-public class PresidentGameNetworkEngine {
+public class PresidentGameNetworkEngine extends PresidentGameEngine{
     private static int nbPlayers;
     private static int nbRounds;
 
@@ -26,6 +28,7 @@ public class PresidentGameNetworkEngine {
 
     private Deque<Card[]> lastNMoves = new ArrayDeque<>();
     private Map<CardValue, Integer> squareCounter = new HashMap<>();
+    private Map<String, Integer> presidentCounter = new HashMap<>();
 
     /*
      * storing the players name in a list
@@ -107,7 +110,8 @@ public class PresidentGameNetworkEngine {
         host.play();
     }
 
-    protected void play() {
+    @Override
+    public void play() {
         deck = new Deck();
         giveCardsToPlayers(president, deck);
         // check who has the Queen of heart (wait all responses) -> reorder players list
@@ -115,18 +119,27 @@ public class PresidentGameNetworkEngine {
         askForQueenOfHeart();
         handleResponseToQueenOfHeart();
         gameLoop();
-
-        int cpt = 0;
-        while (cpt < nbRounds -1){
+        System.out.println("end of first round");
+        int cpt = 1;
+        while (cpt < nbRounds){
+            cpt++;
             deck = new Deck();
             giveCardsToPlayers(president, deck);
+            resetListAndCounter();
             exchangeCards();
             gameLoop();
+            System.out.println("end of round " + cpt);
         }
         gameOver();
-
     }
 
+
+    private void resetListAndCounter() {
+        players.clear();
+        players.addAll(winners);
+        playersStillPlaying.clear();
+        squareCounter.clear();
+    }
 
     /*
      * parent method should be implement in PresidentGameEngine (check teacher's
@@ -137,7 +150,8 @@ public class PresidentGameNetworkEngine {
     }
 
     /** give cards to each player */
-    protected void giveCardsToPlayers(Game president, Deck deck) {
+    @Override
+    public void giveCardsToPlayers(Game president, Deck deck) {
         int nbCards = deck.getDeckSize() / president.getPlayers().size();
         for (String playerId : president.getPlayers()) {
             Card[] cardsToGive = deck.giveCards(nbCards);
@@ -147,12 +161,14 @@ public class PresidentGameNetworkEngine {
         }
     }
 
-    private void askForQueenOfHeart() {
+    @Override
+    public void askForQueenOfHeart() {
         GameCommand askForQueenOfHeart = new GameCommand("askForQueenOfHeart");
         hostFacade.sendGameCommandToAll(president, askForQueenOfHeart);
     }
 
-    protected void handleResponseToQueenOfHeart(){
+    @Override
+    public void handleResponseToQueenOfHeart(){
         List<String> otherPlayers = new ArrayList<>();
         int nbResponses = 0;
         while (nbResponses < nbPlayers){
@@ -172,7 +188,8 @@ public class PresidentGameNetworkEngine {
         players.addAll(otherPlayers);
     }
 
-    private void gameLoop(){
+    @Override
+    public void gameLoop(){
         playersStillPlaying.addAll(players);
         while (playersStillPlaying.size() > 1){
             for (String player : getPlayers()){
@@ -211,17 +228,18 @@ public class PresidentGameNetworkEngine {
         PlayerResponse response = getCardFromPlayer(player);
         updateLastNMoves(response);
         System.out.println("lastNmoves : ");
-        lastNMoves.forEach(System.out::println);
+        lastNMoves.forEach(m -> System.out.println(Card.cardsToString(m)));
+        updateSquareCounter();
         //check if the player ends his hand
         if (response.getNbOfCardsRemaining() == 0){
             //if the last card is a 2, the player is the Scumbag
             if (endsWithTwo()){
-                System.out.println(player+" ends with two");
+                System.out.println(getPlayerName(player)+" ends with two");
                 winners.addFirst(player); 
                 endsWithTwo = true;
             }
             else {
-                System.out.println(player+" ends");
+                System.out.println(getPlayerName(player)+" ends");
                 addWinners(player);
             }
             playersStillPlaying.remove(player);
@@ -229,6 +247,7 @@ public class PresidentGameNetworkEngine {
             //if he is the first player to finish : reset the pile 
             if (winners.size() == 1){
                 isPresident = true;
+                presidentCounter.merge(player, 1, Integer::sum);
             }
             System.out.println("winners.size : "+winners.size() + " playersStillPlaying.size(): " + playersStillPlaying.size());
         }
@@ -249,22 +268,20 @@ public class PresidentGameNetworkEngine {
     }   
 
     /** storing the name of the first player */
-    protected void setFirstPlayer(String playerId) {
+    @Override
+    public void setFirstPlayer(String playerId) {
         this.firstPlayer = playerId;
         System.out.println("The first player is " + getPlayerName(firstPlayer));
     }
 
-    private String getPlayerName(String playerId) {
+    @Override
+    public String getPlayerName(String playerId) {
         return playerId.split("#")[0];
     }
 
-    protected String getFirstPlayer(){
+    @Override
+    public String getFirstPlayer(){
         return firstPlayer;
-    }
-
-    /** the host designates who's the next player and sends him the cards played */
-    protected void plays(Card[] cards) {
-        System.out.println("it's your turn ! Here the cards played before :" + Arrays.toString(cards));
     }
 
     /** winners will be used while displaying the roles */
@@ -274,19 +291,20 @@ public class PresidentGameNetworkEngine {
 
 
     /* displaying the roles and initiating the cards exchange */
-    protected void exchangeCards(){
+    @Override
+    public void exchangeCards(){
         String scumbagName = winners.poll();
         String presidentName = winners.poll();
         String vicePresidentName = winners.poll();
         String viceScumbagName = winners.pollLast();
 
-        System.out.printf("President (%s) and Scumbag (%s) exchange two cards\n", presidentName, scumbagName);
-        GameCommand giveTwoBestCards = new GameCommand("giveBestCards", "2", Map.of("toPlayer", presidentName));
-        hostFacade.sendGameCommandToPlayer(this.president, scumbagName, giveTwoBestCards);
+        System.out.printf("President (%s) and Scumbag (%s) exchange two cards\n", getPlayerName(presidentName), getPlayerName(scumbagName));
+        GameCommand giveTwoBestCards = new GameCommand("giveBestCards", "2", Map.of("playerId", scumbagName, "toPlayer", presidentName));
+        hostFacade.sendGameCommandToAll(this.president, giveTwoBestCards);
 
-        System.out.printf("Vice-President (%s) and Vice-Scumbag (%s) exchange one card\n", vicePresidentName, viceScumbagName);
-        GameCommand giveYourBestCard = new GameCommand("giveBestCards", "1", Map.of("toPlayer", vicePresidentName));
-        hostFacade.sendGameCommandToPlayer(this.president, viceScumbagName, giveYourBestCard);
+        System.out.printf("Vice-President (%s) and Vice-Scumbag (%s) exchange one card\n", getPlayerName(vicePresidentName), getPlayerName(viceScumbagName));
+        GameCommand giveYourBestCard = new GameCommand("giveBestCards", "1", Map.of("playerId", viceScumbagName, "toPlayer", vicePresidentName));
+        hostFacade.sendGameCommandToAll(this.president, giveYourBestCard);
 
         int nbResponses = 0;
         while (nbResponses < 2){
@@ -296,14 +314,13 @@ public class PresidentGameNetworkEngine {
             }
         }
 
-        players.clear();
-        players.addAll(winners);
         winners.clear();
     }
 
-    private void gameOver() {
+    @Override
+    public void gameOver() {
         System.out.println("End of the game");
-        System.out.println("Winner is ?");
+        displayWinner();
     }
       /**
      * we get a card from a player, if possible.
@@ -312,7 +329,7 @@ public class PresidentGameNetworkEngine {
      */
     protected PlayerResponse getCardFromPlayer(String player){
         hostFacade.sendGameCommandToPlayer(president, player, new GameCommand("play", getLastNMovesStr()));
-        System.out.println("Ask "+player);
+        System.out.println("Ask "+getPlayerName(player));
         GameCommand receivedCard = hostFacade.receiveGameCommand(president);
         System.out.println("receive card : "+receivedCard.body()+" params : "+receivedCard.params());
         if (receivedCard.name().equals("played")) {
@@ -338,7 +355,7 @@ public class PresidentGameNetworkEngine {
     }
 
     protected boolean isClosed(boolean isPresident){
-        System.out.printf("endsWithTwo: %b - isSquare: %b - noOneCanPlay: %b - isPresident: %b%n", endsWithTwo(), isSquare(), noOneCanPlay(), isPresident);
+        System.out.printf("endsWithTwo: %s - isSquare: %s - noOneCanPlay: %s - isPresident: %s%n", endsWithTwo(), isSquare(), noOneCanPlay(), isPresident);
         return endsWithTwo() || isSquare() || noOneCanPlay() || isPresident ;
     }
 
@@ -349,29 +366,47 @@ public class PresidentGameNetworkEngine {
         return false;
     }
 
+    protected void updateSquareCounter() {
+        if (lastNMoves.getFirst().length > 0){
+            CardValue cardValue = lastNMoves.getFirst()[0].getValue();
+            squareCounter.merge(cardValue, lastNMoves.getFirst().length, Integer::sum);
+        }
+    }
+
     protected boolean isSquare(){
         if (lastNMoves.getFirst().length > 0){
             CardValue cardValue = lastNMoves.getFirst()[0].getValue();
-            Integer cpt = squareCounter.merge(cardValue, lastNMoves.getFirst().length, Integer::sum);
+            Integer cpt = squareCounter.get(cardValue);
             return cpt == 4;
         }
         return false;
     }
 
-     protected boolean noOneCanPlay(){
+    protected boolean noOneCanPlay(){
         int nb = 0;
         for (Card[] move : lastNMoves){
-            if (nb<playersStillPlaying.size()){
-                if (move.length != 0){
-                    return false; 
-                }
+            if (nb < playersStillPlaying.size() && move.length != 0){
+                return false; 
             }
             nb++;
         }
         return true;
     }
 
+    @Override
     public List<String> getPlayers() {
         return this.players;
+    }
+
+    protected void displayWinner(){
+        int maxValue = 0;
+        String winner = "";
+        for (Map.Entry<String, Integer> entry : presidentCounter.entrySet()) {
+            if (entry.getValue() > maxValue){
+                maxValue = entry.getValue();
+                winner = entry.getKey();
+            }
+        }
+        System.out.printf("The winner is %s (was %d times president for the %d rounds played)%n", getPlayerName(winner), presidentCounter.get(winner), nbRounds);
     }
 }

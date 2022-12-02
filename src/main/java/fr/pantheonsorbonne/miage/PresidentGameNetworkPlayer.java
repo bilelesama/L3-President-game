@@ -64,7 +64,7 @@ public class PresidentGameNetworkPlayer {
                     case "giveBestCards":
                         handleGiveBestCards(command);
                         break;
-                    case "giveAndReceive" :
+                    case "giveAndReceiveCards" :
                         handleGiveCardsOfYourChoice(command);
                         break;
                     case "giveCardsForExchange" :
@@ -139,7 +139,7 @@ public class PresidentGameNetworkPlayer {
         Card[] cards = guest.chooseBestCardsToGive(new ArrayList<>(hand), nbCards);
         removeCardsFromHand(cards);
         String playerToGive = command.params().get("toPlayer");
-        GameCommand giveBestCards = new GameCommand("giveAndReceiveCards", Card.cardsToString(cards), Map.of("toPlayer", playerId));
+        GameCommand giveBestCards = new GameCommand("giveAndReceiveCards", Card.cardsToString(cards), Map.of("playerId", playerToGive, "toPlayer", playerId));
         playerFacade.sendGameCommandToPlayer(president, playerToGive, giveBestCards);
     }
 
@@ -147,11 +147,8 @@ public class PresidentGameNetworkPlayer {
         Card[] cardsReceived = Card.stringToCards(command.body());
         Card[] cards = guest.chooseCardsOfYourChoiceToGive(new ArrayList<>(hand), cardsReceived.length);
         removeCardsFromHand(cards);
-        hand.addAll(Arrays.asList(cardsReceived));
-        Collections.sort(hand, new CardComparator());
-
         String playerToGive = command.params().get("toPlayer");
-        GameCommand giveCardsOfYourChoice = new GameCommand("giveCardsForExchange", Card.cardsToString(cards), Map.of("toPlayer", playerId));
+        GameCommand giveCardsOfYourChoice = new GameCommand("giveCardsForExchange", Card.cardsToString(cards));
         playerFacade.sendGameCommandToPlayer(president, playerToGive, giveCardsOfYourChoice);
     }
 
@@ -160,6 +157,7 @@ public class PresidentGameNetworkPlayer {
         hand.addAll(Arrays.asList(cardsReceived));
         Collections.sort(hand, new CardComparator());
         GameCommand exchangeOk = new GameCommand("exchangeOk");
+        System.out.println("receive cards for exchange, send ok to host");
         playerFacade.sendGameCommandToAll(president, exchangeOk);
     }
 
