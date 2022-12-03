@@ -28,6 +28,8 @@ public class PresidentGameNetworkPlayer {
     static Guest guest;
     static boolean playing = true;
 
+    private static List<String> knownGuestImpl = Arrays.asList("GuestDummyImpl", "Guest1");
+
     public static void main(String[] args) {
         /* check if the player name is ok */
         if (args == null || args.length != 2){
@@ -40,12 +42,11 @@ public class PresidentGameNetworkPlayer {
         playerFacade.createNewPlayer(playerId);
         president = playerFacade.autoJoinGame("PRESIDENT");
         
-        if ("GuestDummyImpl".equals(args[1])) {
-            guest = new GuestDummyImpl();
-        } else {
+        if (! knownGuestImpl.contains(args[1])) {
             System.err.println("Unknown guest implementation");
-            System.exit(0);
+            System.exit(1);
         }
+        guest = getGuestImpl(args[1]);
        
         while (playing) {
             GameCommand command = playerFacade.receiveGameCommand(president);
@@ -78,6 +79,19 @@ public class PresidentGameNetworkPlayer {
                 }
             }
         }
+    }
+
+    private static Guest getGuestImpl(String guestImpl) {
+        Guest guest = null;
+        switch(guestImpl) {
+            case "GuestDummyImpl":
+                guest = new GuestDummyImpl();
+                break;
+            case "Guest1":
+                guest = new Guest1();
+                break;
+        }
+        return guest;
     }
 
     /* method that checks which player has the queen of hearts so he can start the game */

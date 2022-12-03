@@ -21,7 +21,7 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
 
     private static List<String> listPlayers = Arrays.asList("Kenz", "Aurelie", "Bilele", "Adrien");
     private Map<String, PresidentGameLocalPlayer> localPlayers;
-    private static List<String> knownGuestImpl = Arrays.asList("GuestDummyImpl");
+    private static List<String> knownGuestImpl = Arrays.asList("GuestDummyImpl", "Guest1");
 
     public static void main(String[] args) {
         
@@ -59,6 +59,9 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
         switch(guestImpl) {
             case "GuestDummyImpl":
                 guest = new GuestDummyImpl();
+                break;
+            case "Guest1":
+                guest = new Guest1();
                 break;
         }
         return guest;
