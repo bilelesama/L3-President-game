@@ -14,7 +14,7 @@ import fr.pantheonsorbonne.miage.model.Game;
 import fr.pantheonsorbonne.miage.model.GameCommand;
 
 /**
- * this is the player part of the network version of the war game
+ * this is the player part of the network version of the president game
  */
 public class PresidentGameNetworkPlayer {
 
@@ -140,7 +140,7 @@ public class PresidentGameNetworkPlayer {
         removeCardsFromHand(cards);
         String playerToGive = command.params().get("toPlayer");
         GameCommand giveBestCards = new GameCommand("giveAndReceiveCards", Card.cardsToString(cards), Map.of("playerId", playerToGive, "toPlayer", playerId));
-        playerFacade.sendGameCommandToPlayer(president, playerToGive, giveBestCards);
+        playerFacade.sendGameCommandToAll(president, giveBestCards);
     }
 
     protected static void handleGiveCardsOfYourChoice(GameCommand command) {

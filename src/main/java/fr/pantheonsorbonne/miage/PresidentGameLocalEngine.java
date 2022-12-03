@@ -1,29 +1,67 @@
 package fr.pantheonsorbonne.miage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
 import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
+import fr.pantheonsorbonne.miage.game.PlayerResponse;
 import fr.pantheonsorbonne.miage.model.Game;
 
 public class PresidentGameLocalEngine extends PresidentGameEngine {
 
-    public PresidentGameLocalEngine(HostFacade hostFacade, Game president) {
-        super();
-        //TODO Auto-generated constructor stub
+    public PresidentGameLocalEngine(Game president, Map<String, PresidentGameLocalPlayer> localPlayers) {
+        this.president = president;
+        this.localPlayers = localPlayers;
     }
 
+    private static List<String> listPlayers = Arrays.asList("Kenz", "Aurelie", "Bilele", "Adrien");
+    private Map<String, PresidentGameLocalPlayer> localPlayers;
+    private static List<String> knownGuestImpl = Arrays.asList("GuestDummyImpl");
+
     public static void main(String[] args) {
+        
+        if (args.length != 1){
+            System.err.println("Usage : PresidentGameLocalEngine [guest implementation]");
+            System.exit(1);
+        }
+
+
+        if (! knownGuestImpl.contains(args[0])) {
+            System.err.println("Unknown guest implementation");
+            System.exit(1);
+        }
+        
+        Map<String, PresidentGameLocalPlayer> localPlayers = new HashMap<>();
+        for (String player:listPlayers) {
+            localPlayers.put(player, new PresidentGameLocalPlayer(player, getGuestImpl(args[0])));
+        }
+
+
         // create Game with players
         HashSet<String> players = new HashSet<>();
-        players.addAll(Arrays.asList("Kenz", "Aurelie", "Bilele", "Adrien"));
+        players.addAll(listPlayers);
         Game president = new Game("president-jeu1", "president", "groupe E", players, Game.GameState.CREATED);
         
         // create local engine
-        PresidentGameLocalEngine host = new PresidentGameLocalEngine(null, president);
+        PresidentGameLocalEngine local = new PresidentGameLocalEngine(president, localPlayers);
+
         // play
-        host.play();
-        
+        local.play();
+    }
+
+    private static Guest getGuestImpl(String guestImpl) {
+        Guest guest = null;
+        switch(guestImpl) {
+            case "GuestDummyImpl":
+                guest = new GuestDummyImpl();
+                break;
+        }
+        return guest;
     }
 
     @Override
@@ -32,12 +70,18 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
         for (String playerName : president.getPlayers()) {
             Card[] cardsToGive = deck.giveCards(nbCards);
             String cardsString = Card.cardsToString(cardsToGive);
-            if (cardsString.contains("Q H")){
+            if (cardsString.contains("QH")){
                 setFirstPlayer(playerName);
             }
+            PresidentGameLocalPlayer localPlayer = localPlayers.get(playerName);
+            localPlayer.setHand(cardsToGive);
             System.out.println("Send "+cardsString+" to "+playerName);
         }
-        
+    }
+
+    @Override
+    public void askForQueenOfHeart() {
+        System.out.println("");
     }
 
     @Override
@@ -53,27 +97,25 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
     }
 
     @Override
-    public void askForQueenOfHeart() {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void gameLoop() {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
     public void exchangeCards() {
-        // TODO Auto-generated method stub
-        
+        // appeler giveBestCards sur le trouduc
+        // donner les cartes au président et lui demander 2 cartes de son choix 
+        // pour mettre à jour le jeu du trouduc
+        // idem avec les vices
+        winners.clear();
     }
 
     @Override
-    public void gameOver() {
-        // TODO Auto-generated method stub
-        
+    public PlayerResponse getCardFromPlayer(String player) {
+        PresidentGameLocalPlayer localPlayer = localPlayers.get(player);
+        return localPlayer.playCards(new ArrayList<>(lastNMoves));
     }
+
+    @Override
+    public List<String> getPlayers() {
+        return this.players;
+    }
+
+
 
 }
