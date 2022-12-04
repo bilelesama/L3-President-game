@@ -28,7 +28,7 @@ public class PresidentGameNetworkPlayer {
     static Guest guest;
     static boolean playing = true;
 
-    private static List<String> knownGuestImpl = Arrays.asList("GuestDummyImpl", "Guest1");
+    private static List<String> knownGuestImpl = Arrays.asList("GuestAdrien");
 
     public static void main(String[] args) {
         /* check if the player name is ok */
@@ -84,8 +84,8 @@ public class PresidentGameNetworkPlayer {
     private static Guest getGuestImpl(String guestImpl) {
         Guest guest = null;
         switch(guestImpl) {
-            case "GuestDummyImpl":
-                guest = new GuestDummyImpl();
+            case "GuestAdrien":
+                guest = new GuestAdrien();
                 break;
         }
         return guest;
