@@ -18,7 +18,10 @@ public class Guest1 extends AbstractGuest implements Guest {
         }
 
         if (nbCardsToPlay == 1) {
-            playedCard.add(chooseOneCard(cardsPlayedBefore, hand));
+            Card oneCard = chooseOneCard(cardsPlayedBefore, hand);
+            if(oneCard != null) {
+                playedCard.add(oneCard);
+            }
         }
         else {
             playedCard = chooseManyCards(cardsPlayedBefore, hand, nbCardsToPlay);
@@ -72,38 +75,36 @@ public class Guest1 extends AbstractGuest implements Guest {
 
     }
 
-    //override method according to Guest 1 strategy
     // choosing the first cards that can be played
     public List<Card> chooseManyCards(List<Card> cardsPlayedBefore, List<Card> hand, int nbCardsToPlay) {
-        List<Card> playCards = new ArrayList<>();
-            for (Card card : hand ) {
-                    if (playTheFirstCard(card, cardsPlayedBefore) != null) {
-                        if (playedCard.isEmpty()) {
-                            playedCard.add(card);
-
-                        } else {
-                            //checking if the card matches the rank of the last added card in playedCard
-                            if (playedCard.get(playedCard.size() - 1).getValue() == card.getValue()) {
-                                playedCard.add(card);
-                            }
-
-                            // if not, clearing playedCard and adding the new card
-                            else {
-                                playedCard.clear();
-                                playedCard.add(card);
-                            }
-                        }
+        int lastCardRank=cardsPlayedBefore.get(0).getValue().getRank();
+        for (int i = 0; i < hand.size(); i++) {
+            int currentCardRank=hand.get(i).getValue().getRank();
+            // checking if the current card is higher or equal to the last added card
+            if(currentCardRank <= lastCardRank){
+                if(playedCard.isEmpty()){
+                    playedCard.add(hand.get(i));
+                }
+                // if playedCard isn't empty and contains the same rank card than currentCardRank
+                // if playedCard does not have a size equal to nbCarsToPlay
+                else if (playedCard.get(0).getValue().getRank() == currentCardRank && playedCard.size() < nbCardsToPlay){
+                    //adding the card to playedCard
+                    playedCard.add(hand.get(i));
+                    //updating lastCardRank
+                    lastCardRank=currentCardRank;
+                    //if playedCard has the expected size
+                    if (playedCard.size()==nbCardsToPlay){
+                        return playedCard;
                     }
                 }
-            if (nbCardsToPlay==0){
-                return playedCard;
+                else{
+                    playedCard.clear();
+                    playedCard.add(hand.get(i));
+                }
             }
-            for(int i=0; i<nbCardsToPlay; i++){
-                playCards.add(playedCard.get(i));
-            }
-        return playCards;
-
-
+        }
+        playedCard.clear();
+        return playedCard;
     }
     
 }
