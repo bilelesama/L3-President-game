@@ -41,7 +41,7 @@ public class PresidentGameLocalPlayer {
     public PlayerResponse playCards(List<Card[]> lastNMoves) {
         // set the list of the n last moves extract from the command.body()
         this.lastNMoves = lastNMoves;
-        Card[] playedCards = guest.chooseCardsToPlay(hand,lastNMoves);
+        Card[] playedCards = guest.chooseCardsToPlayLocal(hand,lastNMoves);
         System.out.println(playerName+" plays Cards : ");
         for ( Card card : playedCards){
             System.out.println(card);

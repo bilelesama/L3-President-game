@@ -66,6 +66,31 @@ public class GuestAdrien implements Guest {
         return oneCardToPlay;
     }
 
+    public Card[] playOneCardLocal(List<Card> hand, List<Card[]> lastNMoves) {
+        Set<Integer> doubleInHand = findDoubleInHand(hand);
+        boolean thereIsDouble = false;
+        Card[] oneCardToPlay = new Card[1];
+        oneCardToPlay[0] = hand.get(0);
+
+        for (Card card : hand) {
+            for (Card card2 : hand) {
+                for (Integer num : doubleInHand) {
+                    if (card.getValue().getRank() == num) {
+                        thereIsDouble = true;
+                    }
+                    if (card.getValue().getRank() >= card2.getValue().getRank() && thereIsDouble == false) {
+                        
+                        oneCardToPlay[0] = card;
+                        
+                    }
+                    thereIsDouble = false;
+                }
+
+            }
+        }
+        return oneCardToPlay;
+    }
+
     public Card[] playTriple(List<Card> hand, List<Card[]> lastNMoves) {
 
         Set<Integer> doubleInHand = findDoubleInHand(hand);
@@ -83,6 +108,30 @@ public class GuestAdrien implements Guest {
                     if(lastMove.isEmpty() || card.getValue().getRank() <= lastMove.get(lastMove.size()-1).getValue().getRank()){
                     cardsToPlay.add(card2);
                     }
+                }
+                thereIsDouble = false;
+            }
+            if (cardsToPlay.size() == 3) {
+                return cardToPlayToArray(cardsToPlay);
+            }
+        }
+        return new Card[0];
+    }
+
+    public Card[] playTripleLocal(List<Card> hand, List<Card[]> lastNMoves) {
+
+        Set<Integer> doubleInHand = findDoubleInHand(hand);
+        List<Card> cardsToPlay = new ArrayList<>();
+        boolean thereIsDouble = false;
+        for (Card card : hand) {
+            for (Card card2 : hand) {
+                for (Integer num : doubleInHand) {
+                    if (card.getValue().getRank() == num) {
+                        thereIsDouble = true;
+                    }
+                }
+                if (card.getValue().getRank() == card2.getValue().getRank() && thereIsDouble == true) {
+                    cardsToPlay.add(card2);
                 }
                 thereIsDouble = false;
             }
@@ -120,6 +169,30 @@ public class GuestAdrien implements Guest {
 
     }
 
+    public Card[] playDoubleLocal(List<Card> hand, List<Card[]> lastNMoves) {
+        Set<Integer> doubleInHand = findDoubleInHand(hand);
+        List<Card> cardsToPlay = new ArrayList<>();
+        boolean thereIsDouble = false;
+        for (Card card : hand) {
+            for (Card card2 : hand) {
+                for (Integer num : doubleInHand) {
+                    if (card.getValue().getRank() == num) {
+                        thereIsDouble = true;
+                    }
+                }
+                if (card.getValue().getRank() == card2.getValue().getRank() && thereIsDouble == true) {
+                    cardsToPlay.add(card2);
+                }
+                thereIsDouble = false;
+            }
+            if (cardsToPlay.size() == 2) {
+                return cardToPlayToArray(cardsToPlay);
+            }
+        }
+        return new Card[0];
+
+    }
+
     @Override
     public Card[] chooseCardsToPlay(List<Card> hand, List<Card[]> lastNMoves) {
         List<Card> lastMove = checkLastNMoves(lastNMoves);
@@ -144,42 +217,64 @@ public class GuestAdrien implements Guest {
         }
     }
 
+    public Card[] chooseCardsToPlayLocal(List<Card> hand, List<Card[]> lastNMoves) {
+        if (lastNMoves.size() == 1) {
+            return playOneCardLocal(hand, lastNMoves);
+        } else if (lastNMoves.size() == 2) {
+            return playDoubleLocal(hand, lastNMoves);
+        } else if (lastNMoves.size() == 3) {
+            return playTripleLocal(hand, lastNMoves);
+        } else if (lastNMoves.isEmpty()) {
+            if (playTripleLocal(hand, lastNMoves).length != 0) {
+                return playTripleLocal(hand, lastNMoves);
+            } else if (playDoubleLocal(hand, lastNMoves).length != 0) {
+                return playDoubleLocal(hand, lastNMoves);
+            } else if (playOneCardLocal(hand, lastNMoves).length != 0) {
+                return playOneCardLocal(hand, lastNMoves);
+            } else {
+                return new Card[0];
+            }
+        } else {
+            return new Card[0];
+        }
+    }
+
     @Override
     public Card[] chooseBestCardsToGive(List<Card> hand, int nbCards) {
 
         if (nbCards == 1) {
-            Card[] cardsToGive = new Card[1];
-            cardsToGive[0] = hand.get(0);
+            Card[] cardsToPlay = new Card[1];
+            cardsToPlay[0] = hand.get(0);
 
             for (Card card : hand) {
                 CardValue cardValue = card.getValue();
-                if (cardValue.getRank() < cardsToGive[0].getValue().getRank()) {
-                    cardsToGive[0] = card;
+                if (cardValue.getRank() < cardsToPlay[0].getValue().getRank()) {
+                    cardsToPlay[0] = card;
                 }
             }
 
-            return cardsToGive;
+            return cardsToPlay;
         } else {
-            Card[] cardsToGive = new Card[2];
-            cardsToGive[0] = hand.get(0);
-            cardsToGive[1] = hand.get(0);
+            Card[] cardsToPlay = new Card[2];
+            cardsToPlay[0] = hand.get(0);
+            cardsToPlay[1] = hand.get(0);
             for (Card card : hand) {
                 CardValue cardValue = card.getValue();
-                if (cardValue.getRank() < cardsToGive[0].getValue().getRank()) {
-                    cardsToGive[0] = card;
+                if (cardValue.getRank() < cardsToPlay[0].getValue().getRank()) {
+                    cardsToPlay[0] = card;
                 }
             }
             for (Card card2 : hand) {
                 CardValue cardValue = card2.getValue();
-                if (card2 == cardsToGive[0]) {
+                if (card2 == cardsToPlay[0]) {
                     continue;
                 }
-                if (cardValue.getRank() < cardsToGive[0].getValue().getRank()) {
-                    cardsToGive[1] = card2;
+                if (cardValue.getRank() < cardsToPlay[0].getValue().getRank()) {
+                    cardsToPlay[1] = card2;
                 }
             }
 
-            return cardsToGive;
+            return cardsToPlay;
         }
 
     }
