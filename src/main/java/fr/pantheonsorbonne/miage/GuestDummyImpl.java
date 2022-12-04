@@ -15,14 +15,20 @@ public class GuestDummyImpl implements Guest {
 
     @Override
     public Card[] chooseBestCardsToGive(List<Card> hand, int nbCards) {
-        // TODO Auto-generated method stub
-        return new Card[0];
+        Card[] cards = new Card[nbCards];
+        for (int i=0; i<nbCards; i++){
+            cards[i] = hand.get(i);
+        }
+        return cards;
     }
 
     @Override
     public Card[] chooseCardsOfYourChoiceToGive(List<Card> hand, int nbCards) {
-        // TODO Auto-generated method stub
-        return new Card[0];
+        Card[] cards = new Card[nbCards];
+        for (int i=0; i<nbCards; i++){
+            cards[i] = hand.get(hand.size()-1-i);
+        }
+        return cards;
     }
     
 }

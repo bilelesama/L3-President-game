@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import fr.pantheonsorbonne.miage.enums.CardColor;
+import fr.pantheonsorbonne.miage.enums.CardValue;
 import fr.pantheonsorbonne.miage.game.Card;
 import fr.pantheonsorbonne.miage.game.Deck;
 import fr.pantheonsorbonne.miage.game.PlayerResponse;
@@ -73,9 +75,6 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
         for (String playerName : president.getPlayers()) {
             Card[] cardsToGive = deck.giveCards(nbCards);
             String cardsString = Card.cardsToString(cardsToGive);
-            if (cardsString.contains("QH")){
-                setFirstPlayer(playerName);
-            }
             PresidentGameLocalPlayer localPlayer = localPlayers.get(playerName);
             localPlayer.setHand(cardsToGive);
             System.out.println("Send "+cardsString+" to "+playerName);
@@ -84,7 +83,12 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
 
     @Override
     public void askForQueenOfHeart() {
-        System.out.println("");
+        Card queenOfHeart = new Card(CardColor.HEART, CardValue.QUEEN);
+        for(PresidentGameLocalPlayer localPlayer : localPlayers.values()){
+            if (localPlayer.getHand().contains(queenOfHeart)){
+                setFirstPlayer(localPlayer.getPlayerName());
+            }
+        }
     }
 
     @Override
@@ -101,10 +105,24 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
 
     @Override
     public void exchangeCards() {
-        // appeler giveBestCards sur le trouduc
-        // donner les cartes au président et lui demander 2 cartes de son choix 
-        // pour mettre à jour le jeu du trouduc
-        // idem avec les vices
+        PresidentGameLocalPlayer scumbag = localPlayers.get(winners.pollFirst());
+        Card[] scumbagBestCards = scumbag.chooseBestCardsToGive(2);
+
+        PresidentGameLocalPlayer president = localPlayers.get(winners.pollFirst());
+        Card[] presidentCardsChoosed = president.chooseCardsOfYourChoiceToGive(2);
+   
+        scumbag.addCardsToHand(presidentCardsChoosed);
+        president.addCardsToHand(scumbagBestCards);
+
+        PresidentGameLocalPlayer viceScumbag = localPlayers.get(winners.pollFirst());
+        Card[] viceScumbagBestCards = viceScumbag.chooseBestCardsToGive(1);
+ 
+        PresidentGameLocalPlayer vicePresident = localPlayers.get(winners.pollLast());
+        Card[] vicePresidentCardsChoosed = vicePresident.chooseCardsOfYourChoiceToGive(1);
+
+        viceScumbag.addCardsToHand(vicePresidentCardsChoosed);
+        vicePresident.addCardsToHand(viceScumbagBestCards);
+
         winners.clear();
     }
 

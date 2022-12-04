@@ -61,4 +61,17 @@ public class Card {
     public String toString() {
         return this.value.getStringRepresentation() + this.color.getStringRepresentation();
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null || getClass() != other.getClass()) {
+            return false;
+        }
+        return ((Card) other).getValue()==this.getValue() && ((Card) other).getColor()==this.getColor();
+    }
+
+    @Override
+    public int hashCode() {
+        return this.getValue().getRank() + this.getColor().getCode();
+    }
 }

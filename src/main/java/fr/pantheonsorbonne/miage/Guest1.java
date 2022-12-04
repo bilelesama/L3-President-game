@@ -23,17 +23,10 @@ public class Guest1 extends AbstractGuest implements Guest {
         else {
             playedCard = chooseManyCards(cardsPlayedBefore, hand, nbCardsToPlay);
         }
-        for(Card card : playedCard){
-            hand.remove(card);
-        }
-        
-        Card[] returnCard = new Card[playedCard.size()];
-        for(int i=0; i<playedCard.size(); i++) {
-            returnCard[i] = playedCard.get(i);
-        }
-
-        return returnCard;
+        return getCardsToPlayToArray(playedCard);
     }
+
+
 
     @Override
     public Card[] chooseBestCardsToGive(List<Card> hand, int nbCards) {
@@ -42,17 +35,17 @@ public class Guest1 extends AbstractGuest implements Guest {
             bestCards.add(hand.get(0));
             hand.remove(0);
         }
-        return (Card[]) bestCards.toArray();
+        return getCardsToPlayToArray(bestCards);
     }
 
     @Override
     public Card[] chooseCardsOfYourChoiceToGive(List<Card> hand, int nbCards) {
-        List<Card> bestCards = new ArrayList<>();
+        List<Card> cardsOfYourChoice = new ArrayList<>();
         for (int i=0; i<nbCards; i++){
-            bestCards.add(hand.get(hand.size()-1));
+            cardsOfYourChoice.add(hand.get(hand.size()-1));
             hand.remove(hand.size()-1);
         }
-        return (Card[]) bestCards.toArray();
+        return getCardsToPlayToArray(cardsOfYourChoice);
     }
 
     // Guest 1 strategy :choosing the first card that can be played

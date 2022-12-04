@@ -27,20 +27,28 @@ public class AbstractGuest {
           else if (card.getValue().getRank() == cardsPlayedBefore.get(CARDS_PLAYED_BEFORE_SIZE - 1).getValue().getRank()) {
               return card;
           }
-          else if (card.getValue().getRank() < cardsPlayedBefore.get(CARDS_PLAYED_BEFORE_SIZE - 1).getValue().getRank()) {
+          else if (card.getValue().getRank() > cardsPlayedBefore.get(CARDS_PLAYED_BEFORE_SIZE - 1).getValue().getRank()) {
               return card;
           }
           return null;
       }
     
     // method that allows to update the ArrayList of cards played before
-    public static ArrayList<Card> updatingCardsPlayedBefore(ArrayList<Card> playedCard, ArrayList<Card> cardsPlayedBefore){
+    public static List<Card> updatingCardsPlayedBefore(List<Card> playedCard, List<Card> cardsPlayedBefore){
         cardsPlayedBefore.addAll(playedCard);
         return cardsPlayedBefore;
     }
 
     //method that gives the number of cards left for each player
-    public static int getNumberOfCardsLeft(ArrayList<Card> hand){
+    public static int getNumberOfCardsLeft(List<Card> hand){
         return hand.size();
+    }
+
+    public static Card[] getCardsToPlayToArray(List<Card> playedCard){
+        Card[] returnCard = new Card[playedCard.size()];
+        for(int i=0; i<playedCard.size(); i++) {
+            returnCard[i] = playedCard.get(i);
+        }
+        return returnCard;
     }
 }
