@@ -62,9 +62,6 @@ public class PresidentGameLocalEngine extends PresidentGameEngine {
             case "GuestDummyImpl":
                 guest = new GuestDummyImpl();
                 break;
-            case "Guest1":
-                guest = new Guest1();
-                break;
         }
         return guest;
     }

@@ -87,9 +87,6 @@ public class PresidentGameNetworkPlayer {
             case "GuestDummyImpl":
                 guest = new GuestDummyImpl();
                 break;
-            case "Guest1":
-                guest = new Guest1();
-                break;
         }
         return guest;
     }
